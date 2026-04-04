@@ -1,0 +1,41 @@
+linguistic_analysis_task:
+  description: >
+    Analyze the following message content: "{message_text}".
+    Look for:
+    1. Psychological triggers: False urgency or authority bias.
+    2. Investment Scams: Phrases like "crypto booming", "100% guarantee", or "sports betting".
+    3. Structural issues: Inconsistent grammar or unprofessional formatting.
+  expected_output: >
+    A bulleted report identifying specific linguistic red flags found in the text 
+    and a "Manipulation Score" from 1 to 10.
+  agent: forensic_linguist
+
+technical_audit_task:
+  description: >
+    Audit the technical source of this communication. 
+    Sender Information: "{sender_id}"
+    Message Content for URLs: "{message_text}"
+    
+    Check for:
+    1. SSIR Compliance: Is the "{sender_id}" a personal +65 number (8/9 series) claiming to be a bank?
+    2. URL Integrity: Does the message contain links like .net, .xyz, or character substitutions?
+    3. Header Verification: Flag if the sender ID resembles a "Likely-SCAM" unregistered tag.
+  expected_output: >
+    A technical verification report confirming if the sender is legitimate or a spoof 
+    attempt, and a list of any malicious URLs detected.
+  agent: technical_security_auditor
+
+final_security_recommendation_task:
+  description: >
+    Review findings from the Forensic Linguist and Technical Auditor. 
+    Format your response EXACTLY as follows:
+    ANALYSIS:
+    - [Bullet 1]
+    - [Bullet 2]
+    
+    ACTIONS:
+    - [Action 1]
+    - [Action 2]
+  expected_output: >
+    A structured report with clear "ANALYSIS:" and "ACTIONS:" headers followed by bullet points.
+  agent: technical_security_auditor
