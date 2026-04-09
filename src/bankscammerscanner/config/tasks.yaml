@@ -27,15 +27,20 @@ technical_audit_task:
 
 final_security_recommendation_task:
   description: >
-    Review findings from the Forensic Linguist and Technical Auditor. 
+    Review findings from the Forensic Linguist and Technical Auditor.
     Format your response EXACTLY as follows:
+    RISK LEVEL: [HIGH RISK or LOW RISK]
     ANALYSIS:
     - [Bullet 1]
     - [Bullet 2]
-    
+
     ACTIONS:
     - [Action 1]
     - [Action 2]
+
+    Set RISK LEVEL to HIGH RISK if any of the following apply: manipulation score >= 6,
+    sender is spoofed or international, scam or phishing patterns detected, loan scam indicators present.
+    Otherwise set RISK LEVEL to LOW RISK.
   expected_output: >
-    A structured report with clear "ANALYSIS:" and "ACTIONS:" headers followed by bullet points.
+    A structured report starting with "RISK LEVEL:" then "ANALYSIS:" and "ACTIONS:" headers followed by bullet points.
   agent: technical_security_auditor

@@ -9,14 +9,14 @@ def init_db():
                   sender_id TEXT,
                   message_content TEXT,
                   risk_level TEXT,
-                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                  timestamp DATETIME DEFAULT (datetime('now', '+8 hours')))''')
     conn.commit()
     conn.close()
 
 def log_scan(sender, message, risk):
     conn = sqlite3.connect('scams.db')
     c = conn.cursor()
-    c.execute("INSERT INTO scan_history (sender_id, message_content, risk_level) VALUES (?, ?, ?)",
+    c.execute("INSERT INTO scan_history (sender_id, message_content, risk_level, timestamp) VALUES (?, ?, ?, datetime('now', '+8 hours'))",
               (sender, message, risk))
     conn.commit()
     conn.close()
