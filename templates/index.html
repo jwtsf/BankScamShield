@@ -24,12 +24,17 @@
         .form-label { font-weight: 600; color: #495057; }
         
         .result-panel { background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 2rem; display: none; }
-        .risk-badge { 
+        .risk-badge {
             background-color: var(--alert-critical-red); color: white;
             font-size: 1.2rem; font-weight: 700; text-transform: uppercase;
             padding: 1rem; border-radius: 4px; display: inline-flex; align-items: center;
         }
         .section-header { font-size: 1.1rem; color: #212529; font-weight: 600; border-bottom: 2px solid #dee2e6; padding-bottom: 0.5rem; margin-top: 1.5rem; }
+        .agent-panel { background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 1.5rem; margin-bottom: 1rem; }
+        .agent-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: white; padding: 0.2rem 0.6rem; border-radius: 3px; }
+        .agent-label.linguist { background-color: #6f42c1; }
+        .agent-label.auditor { background-color: #0d6efd; }
+        .agent-panel p { font-size: 0.85rem; color: #495057; margin-bottom: 0.4rem; }
         
         #loading { display: none; }
     </style>
@@ -84,14 +89,32 @@
                 </div>
 
                 <div id="result-panel" class="result-panel mb-4 shadow-sm">
-                    <div class="risk-badge mb-4 shadow-sm">
-                        <span>🚨</span>
-                        <span class="ms-3">Critical Threat Detected: High Risk</span>
+                    <div id="risk-badge" class="risk-badge mb-4 shadow-sm">
+                        <span id="risk-icon">🚨</span>
+                        <span id="risk-text" class="ms-3">Critical Threat Detected: High Risk</span>
                     </div>
 
+                    <!-- Individual Agent Reports -->
+                    <h5 class="section-header mb-3">🤖 Individual Agent Reports</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="agent-panel">
+                                <span class="agent-label linguist">Senior Forensic Linguist &amp; Financial Fraud Analyst</span>
+                                <div id="linguist-content" class="mt-3"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="agent-panel">
+                                <span class="agent-label auditor">Lead Cyber Security Researcher (SOC Specialist)</span>
+                                <div id="auditor-content" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final Recommendation -->
                     <div class="row">
                         <div class="col-md-7 border-end">
-                            <h5 class="section-header">🔍 Security Briefing: Technical & Linguistic Findings</h5>
+                            <h5 class="section-header">🔍 Security Briefing: Technical &amp; Linguistic Findings</h5>
                             <div id="briefing-content" class="text-muted small mt-3"></div>
                         </div>
 
@@ -113,14 +136,35 @@
                                     <th>Sender ID</th>
                                     <th>Risk Level</th>
                                     <th>Timestamp (SGT)</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody id="history-table-body">
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">No recent scans available. Run a scan to populate.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">No recent scans available. Run a scan to populate.</td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Message Preview Modal -->
+                <div class="modal fade" id="msgModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">📨 Scanned Message</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="small text-muted mb-1">Sender ID</p>
+                                <p id="modal-sender" class="font-monospace fw-bold"></p>
+                                <p class="small text-muted mb-1 mt-3">Message Content</p>
+                                <pre id="modal-message" class="bg-light p-3 rounded small" style="white-space: pre-wrap; word-break: break-word;"></pre>
+                                <p class="small text-muted mb-1 mt-3">Agent Analysis Output</p>
+                                <pre id="modal-analysis" class="bg-light p-3 rounded small" style="white-space: pre-wrap; word-break: break-word;"></pre>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -128,7 +172,47 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function renderHistory(history) {
+            const historyBody = document.getElementById('history-table-body');
+            historyBody.innerHTML = '';
+            if (!history.length) {
+                historyBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No recent scans available. Run a scan to populate.</td></tr>';
+                return;
+            }
+            history.forEach(item => {
+                const row = document.createElement('tr');
+                const riskClass = item[1].includes("High") ? "text-danger fw-bold" : "text-warning fw-bold";
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-outline-secondary py-0';
+                btn.textContent = 'View';
+                btn.dataset.sender = item[0] || '';
+                btn.dataset.message = item[3] || '';
+                btn.dataset.analysis = item[4] || '';
+                btn.addEventListener('click', () => viewMessage(btn.dataset.sender, btn.dataset.message, btn.dataset.analysis));
+
+                row.innerHTML = `
+                    <td class="font-monospace">${item[0]}</td>
+                    <td class="${riskClass}">${item[1]}</td>
+                    <td class="small text-muted">${item[2]}</td>
+                    <td></td>
+                `;
+                row.lastElementChild.appendChild(btn);
+                historyBody.appendChild(row);
+            });
+        }
+
+        function viewMessage(sender, message, analysis) {
+            document.getElementById('modal-sender').textContent = sender || 'Unknown';
+            document.getElementById('modal-message').textContent = message || 'No message content stored.';
+            document.getElementById('modal-analysis').textContent = analysis || 'No analysis stored.';
+            new bootstrap.Modal(document.getElementById('msgModal')).show();
+        }
+
+        // Load history on page open
+        fetch('/history').then(r => r.json()).then(renderHistory);
+
         async function startAnalysis() {
             const msg = document.getElementById('message').value;
             const sender = document.getElementById('sender').value;
@@ -150,25 +234,23 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('result-panel').style.display = 'block';
 
-                // 1. Update Result Content
+                // 1. Update risk badge
+                const isHighRisk = data.risk_label === "High Risk";
+                const badge = document.getElementById('risk-badge');
+                badge.style.backgroundColor = isHighRisk ? 'var(--alert-critical-red)' : '#198754';
+                document.getElementById('risk-icon').textContent = isHighRisk ? '🚨' : '✅';
+                document.getElementById('risk-text').textContent = isHighRisk
+                    ? 'Critical Threat Detected: High Risk'
+                    : 'No Critical Threat: Low Risk / Suspicious';
+
+                // 2. Update agent content
+                document.getElementById('linguist-content').innerHTML = data.linguist_output || '<p class="text-muted">No output.</p>';
+                document.getElementById('auditor-content').innerHTML = data.auditor_output || '<p class="text-muted">No output.</p>';
                 document.getElementById('briefing-content').innerHTML = `<ul>${data.analysis_bullets}</ul>`;
                 document.getElementById('actions-content').innerHTML = `<ul>${data.action_bullets}</ul>`;
 
                 // 2. Update SQLite History Table
-                const historyBody = document.getElementById('history-table-body');
-                historyBody.innerHTML = ''; 
-
-                data.history.forEach(item => {
-                    const row = document.createElement('tr');
-                    const riskClass = item[1].includes("High") ? "text-danger fw-bold" : "text-warning fw-bold";
-                    
-                    row.innerHTML = `
-                        <td class="font-monospace">${item[0]}</td>
-                        <td class="${riskClass}">${item[1]}</td>
-                        <td class="small text-muted">${item[2]}</td>
-                    `;
-                    historyBody.appendChild(row);
-                });
+                renderHistory(data.history);
 
             } catch (error) {
                 console.error("Analysis Error:", error);

@@ -27,15 +27,27 @@ technical_audit_task:
 
 final_security_recommendation_task:
   description: >
-    Review findings from the Forensic Linguist and Technical Auditor. 
+    Review findings from the Forensic Linguist and Technical Auditor.
     Format your response EXACTLY as follows:
+    RISK LEVEL: [HIGH or LOW]
+
     ANALYSIS:
     - [Bullet 1]
     - [Bullet 2]
-    
+
     ACTIONS:
     - [Action 1]
     - [Action 2]
+
+    Set RISK LEVEL to HIGH if any of the following are true:
+    - The sender is a personal mobile number AND the message claims to be from a bank or financial institution
+    - The Manipulation Score is 6 or above
+    - There are malicious or suspicious URLs
+    - The message contains unregistered sender IDs or "Likely-SCAM" headers
+    Note: A personal mobile number used by a non-financial business (e.g. clinic, shop) is NOT
+    sufficient alone to set HIGH — small businesses legitimately use personal numbers.
+    Otherwise set RISK LEVEL to LOW.
   expected_output: >
-    A structured report with clear "ANALYSIS:" and "ACTIONS:" headers followed by bullet points.
+    A structured report starting with "RISK LEVEL: HIGH" or "RISK LEVEL: LOW",
+    followed by clear "ANALYSIS:" and "ACTIONS:" headers with bullet points.
   agent: technical_security_auditor
