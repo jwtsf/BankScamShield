@@ -1,8 +1,4 @@
-This `README.md` is designed to reflect the **technical sophistication** and **engineering leadership** required for an NTU REP Distinction. It positions your project not just as a script, but as a robust, institutional-grade security platform.
-
----
-
-# 🛡️ BankScamShield: Agentic Security Verification Portal
+# BankScamShield: Agentic Security Verification Portal
 
 **BankScamShield** is an AI-driven, multi-agent security platform designed to protect banking customers from sophisticated phishing and social engineering attacks. By utilizing a "Defense-in-Depth" architecture, the system employs specialized AI agents to perform real-time forensic linguistic analysis and technical infrastructure audits on suspicious communications.
 
@@ -10,14 +6,15 @@ This `README.md` is designed to reflect the **technical sophistication** and **e
 
 In the modern threat landscape, single-layer filters often fail to catch "Zero-Day" scams. **BankScamShield** addresses this by orchestrating a "Crew" of autonomous agents:
 
-* **Forensic Linguist Agent**: Analyzes psychological triggers, urgency markers, and "Get Rich Quick" narratives.
-* **Technical Security Auditor**: Validates sender metadata against the **Singapore SSIR Registry** and performs deep-link analysis for typosquatting.
-* **Manager Agent**: Consolidates findings into a structured, human-readable **Institutional Security Briefing**.
+* **Forensic Linguist Agent**: Analyzes psychological triggers, urgency markers, emotional manipulation, and "Get Rich Quick" narratives. Produces a Manipulation Score from 1–10.
+* **Technical Security Auditor**: Validates sender metadata against the **Singapore SSIR Registry**, detects foreign number spoofing, and performs deep-link analysis for typosquatting and suspicious URLs.
+* **Final Recommendation**: The Technical Security Auditor consolidates both agents' findings into a structured **RISK LEVEL: HIGH/LOW** verdict with analysis bullets and recommended actions.
 
 ### Key Features:
-* **Agentic Orchestration**: Powered by `CrewAI` and `Llama 3.3` (via Groq LPU) for sub-5-second inference.
-* **Persistence Layer**: Integrated **SQLite** database for community threat intelligence and trend tracking.
-* **Institutional UI**: A clean, "Open Government" style dashboard built with Flask and Bootstrap 5.
+* **Agentic Orchestration**: Powered by `CrewAI` and `Llama 3.3-70B` (via Groq LPU) for fast inference.
+* **Custom Security Tools**: `SGSSIRChecker` and `URLTechnicalAnalyser` — purpose-built tools for Singapore-specific scam detection.
+* **Persistence Layer**: Integrated **SQLite** database (`scams.db`) for scan history and community threat tracking.
+* **Web Dashboard**: A clean dashboard built with Flask and Bootstrap 5, showing per-scan analysis and recent scan history.
 
 ---
 
@@ -27,16 +24,15 @@ In the modern threat landscape, single-layer filters often fail to catch "Zero-D
 * **Python 3.10+**
 * A **Groq API Key** (Get one at [console.groq.com](https://console.groq.com/))
 
-### Dependency Installation:
-This project uses `uv` (via CrewAI) for high-performance dependency management.
+### Steps:
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
     ```bash
-    git clone <your-repo-url>
-    cd bankscammerscanner
+    git clone https://github.com/jwtsf/BankScamShield.git
+    cd BankScamShield
     ```
 
-2.  **Create and activate the virtual environment:**
+2. **Create and activate the virtual environment:**
     ```bash
     # On Windows
     python -m venv .venv
@@ -47,13 +43,13 @@ This project uses `uv` (via CrewAI) for high-performance dependency management.
     source .venv/bin/activate
     ```
 
-3.  **Install the core packages:**
+3. **Install the package and dependencies:**
     ```bash
-    pip install crewai flask langchain-groq python-dotenv
+    pip install -e .
     ```
 
-4.  **Configure Environment Variables:**
-    Create a `.env` file in the root directory and add your keys:
+4. **Configure Environment Variables:**
+    Create a `.env` file in the root directory:
     ```text
     GROQ_API_KEY=your_actual_key_here
     MODEL=groq/llama-3.3-70b-versatile
@@ -63,28 +59,15 @@ This project uses `uv` (via CrewAI) for high-performance dependency management.
 
 ## 3. How to Run the App
 
-You can interact with BankScamShield through the terminal (for debugging) or the Web Portal (for the full experience).
+### Web Portal (Recommended)
 
-### Option A: Running the Web Portal (Recommended)
-1.  **Set the Python Path** (Ensures the app sees the `src` module):
-    ```bash
-    # On Windows (PowerShell)
-    $env:PYTHONPATH = "src"
-    
-    # On Mac/Linux
-    export PYTHONPATH=src
-    ```
+```bash
+python app.py
+```
 
-2.  **Launch the Flask Server:**
-    ```bash
-    python app.py
-    ```
+Then open your browser to `http://127.0.0.1:5000`.
 
-3.  **Access the Dashboard:**
-    Open your browser to `http://127.0.0.1:5000`.
-
-### Option B: Running via CLI
-To test the "Engine" directly without the web interface:
+### CLI (for testing the crew directly)
 ```bash
 crewai run
 ```
@@ -92,10 +75,38 @@ crewai run
 ---
 
 ## 4. Technical Architecture
-The system follows a modular architecture where the **Logic Layer** (CrewAI) is decoupled from the **Presentation Layer** (Flask). Every scan result is persisted to `scams.db` to facilitate real-time updates to the "Recent Community Scans" table, demonstrating a full-stack, stateful security application.
+
+The system follows a modular architecture where the **Logic Layer** (CrewAI) is decoupled from the **Presentation Layer** (Flask).
+
+```
+app.py (Flask)
+    └── BankScamShieldCrew (CrewAI)
+            ├── forensic_linguist        → linguistic_analysis_task
+            ├── technical_security_auditor → technical_audit_task
+            │       ├── SGSSIRChecker (custom tool)
+            │       └── URLTechnicalAnalyser (custom tool)
+            └── technical_security_auditor → final_recommendation_task
+                    └── RISK LEVEL: HIGH / LOW
+```
+
+Every scan result is persisted to `scams.db`, powering the "Recent Community Scans" history table on the dashboard.
 
 ---
 
-### Distinction Note for Submission:
-* **Model Failover**: This system is configured to use **Llama 3.3-70B** on Groq LPUs, providing a 10x speed advantage over traditional GPT-4 API calls.
-* **Explainable AI (XAI)**: Unlike binary "Scam/Not Scam" filters, this portal provides a detailed **Security Briefing** to educate the user on *why* a message was flagged.
+## 5. Scam Detection Logic
+
+The final risk verdict is **HIGH** if any of the following are true:
+- The sender is a personal mobile number **and** the message claims to be from a bank or financial institution
+- The Manipulation Score is 6 or above
+- Malicious or suspicious URLs are detected
+- The sender ID contains a "Likely-SCAM" header or unregistered tag
+- The sender is a foreign mobile number contacting about Singapore financial matters
+
+Otherwise the verdict is **LOW**.
+
+---
+
+## 6. Notes
+
+* **Explainable AI**: Unlike binary "Scam/Not Scam" filters, this portal provides a detailed Security Briefing explaining *why* a message was flagged.
+* **Singapore-specific**: Detection logic is tuned for the Singapore context — SSIR registry rules, local bank domains (DBS, OCBC, UOB), and MAS regulations.
