@@ -1,4 +1,7 @@
+import re
 import time
+from dotenv import load_dotenv
+load_dotenv(override=True)
 from flask import Flask, render_template, request, jsonify
 from bankscammerscanner.crew import BankScamShieldCrew
 from database import init_db, log_scan, get_history
@@ -19,10 +22,14 @@ def history():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.json
+    if data is None:
+        return jsonify({"status": "error", "message": "Request body must be valid JSON."})
     try:
         # 1. Prepare inputs for CrewAI
-        msg_content = data.get('message', '')
+        msg_content = data.get('message', '').strip()
         sender_id = data.get('sender', 'Unknown')
+        if not msg_content:
+            return jsonify({"status": "error", "message": "Message content is required."})
         
         inputs = {
             'message_text': msg_content, 
@@ -66,14 +73,15 @@ def analyze():
             stripped = raw_text[raw_text.upper().index("RISK LEVEL:"):]
             stripped = stripped.split("\n", 1)[1] if "\n" in stripped else ""
 
-        parts = stripped.split("ACTIONS:")
-        analysis_part = parts[0].replace("ANALYSIS:", "").strip()
+        parts = re.split(r'ACTIONS:', stripped, maxsplit=1, flags=re.IGNORECASE)
+        analysis_part = re.sub(r'ANALYSIS:', '', parts[0], count=1, flags=re.IGNORECASE).strip()
         actions_part = parts[1].strip() if len(parts) > 1 else "No specific actions provided."
 
         # Helper function for HTML formatting
         def to_html_bullets(text):
-            bullets = text.split("- ")
-            return "".join([f"<li>{b.strip()}</li>" for b in bullets if b.strip()])
+            lines = [l.strip() for l in text.splitlines() if l.strip()]
+            bullets = [l[2:].strip() if l.startswith('- ') else l for l in lines]
+            return "".join([f"<li>{b}</li>" for b in bullets if b])
 
         analysis_html = to_html_bullets(analysis_part)
         actions_html = to_html_bullets(actions_part)
