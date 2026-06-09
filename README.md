@@ -43,10 +43,11 @@ In the modern threat landscape, single-layer filters often fail to catch "Zero-D
     source .venv/bin/activate
     ```
 
-3. **Install the package and dependencies:**
+3. **Install dependencies:**
     ```bash
-    pip install -e .
+    pip install -r requirements.txt
     ```
+    > Alternatively, `pip install -e .` installs from `pyproject.toml` directly (useful if you want an editable install).
 
 4. **Configure Environment Variables:**
     Create a `.env` file in the root directory:
@@ -69,8 +70,9 @@ Then open your browser to `http://127.0.0.1:5000`.
 
 ### CLI (for testing the crew directly)
 ```bash
-crewai run
+python src/bankscammerscanner/main.py
 ```
+You'll be prompted to paste a message and enter a Sender ID. The full analysis is printed to the terminal.
 
 ---
 
